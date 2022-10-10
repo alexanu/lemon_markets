@@ -3,6 +3,7 @@
 
 
 from keys_config import *
+import lemon_universes
 from lemon import api
 from datetime import datetime
 import pandas as pd
@@ -18,8 +19,11 @@ client = api.create(
 stocks = pd.read_csv('Gettex_US.csv')
 
 pd.DataFrame(client.market_data.venues.get().results).T
+if not client.market_data.venues.get('XMUN').results[0].is_open:
+    print('closed')
 
 opening_days = client.market_data.venues.get('XMUN').results[0].opening_days
+dt.date.today() in opening_days
 
 venue = client.market_data.venues.get('XMUN').results[0]
 if not venue.is_open:
@@ -47,7 +51,8 @@ while page <= num_of_pages:
     page += 1
 etf_on_gettex.reset_index(drop=True, inplace=True) # after resorting we need to reset index
 etf_on_gettex.to_excel('etf_gettex_lemon.xlsx')
-    
+
+data_found = pd.DataFrame(client.market_data.instruments.get(search='tesla',tradable=True).results)    
 data_found = pd.DataFrame(client.market_data.instruments.get(search='t*a',tradable=True).results)
 data_found = pd.DataFrame(client.market_data.instruments.get(search='***',tradable=True).results)
 data_found = pd.DataFrame(client.market_data.instruments.get(search='S&P',type=['etf'],tradable=True).results)
@@ -58,16 +63,35 @@ isins = data_found['isin'].to_list()[:9] # it seems only 10 allowed in 1 call
 stocks_isin = stocks['ISIN'].to_list()
 Latest_OHLC = pd.DataFrame(
                 client.market_data.ohlc.get(
-                    isin=stocks_isin[:8],
-                    period='m1', # d1
-                    from_='latest', # datetime(2022, 8, 2)
+                    isin=lemon_universes.xmun_universe[8],
+                    period='h1', # d1, h1
+                    from_='2022-09-19', # 'latest'
+                    to='2022-09-19',
                     epoch=True,
                     decimals=True)
                 .results)
 
+response = client.market_data.ohlc.get(
+                    isin=['US88160R1014'],
+                    period='h1', # d1, m1
+                    from_=datetime(2022, 8, 10, 0, 0), # 'latest'
+                    to=datetime(2022, 8, 10, 16, 0),
+                    epoch=True,
+                    decimals=True)
+
+response = client.market_data.ohlc.get(
+                    isin=['US88160R1014'],
+                    period='d1', # d1, m1
+                    from_=datetime(2022, 8, 10), # 'latest'
+                    to=datetime(2022, 8, 20),
+                    epoch=True,
+                    decimals=True)
+
+
+datetime.now().strftime('%Y-%m-%d')
 
 # get latest quotes
-        latest_quotes = pd.DataFrame(client.market_data.quotes.get_latest(isin=stocks_isin[:8], epoch=False,sorting='asc').results)
+        latest_quotes = pd.DataFrame(client.market_data.quotes.get_latest(isin=lemon_universes.xmun_universe[:8], epoch=False,sorting='asc').results)
 
         idx = 0
         batch = 10 # not more than 10 in 1 request
@@ -93,11 +117,11 @@ latest_trades = pd.DataFrame(
                         decimals=True
                         ).results)
 
-
-
-
-
-
+response = client.market_data.ohlc.get(
+    isin=['US0231351067'],
+    period='h1',
+    from_=datetime(2022, 1, 4)
+)
 
 
 
@@ -199,6 +223,7 @@ response = client.trading.orders.get_order(order_id=order_id).results.executed_a
     open_sell_orders = {order.id for order in orders if order.status == "executed" and order.type == "market"}
 
     all_executed_orders = pd.DataFrame(client.trading.orders.get().results)
+    all_executed_orders[['status','activated_at']]
     cash_to_invest+all_executed_orders.executed_price_total.sum()
 
 # cancel order

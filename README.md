@@ -6,7 +6,7 @@ SDK: https://github.com/lemon-markets/sdk-python
 
 API Docs: https://docs.lemon.markets/
 
-Git help:
+### Git help:
 
     - Push to GH:
         1. select file to stage or git add -A

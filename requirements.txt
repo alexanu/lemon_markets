@@ -1,0 +1,6 @@
+lemon
+pandas
+email
+twilio
+gspread
+oauth2client
